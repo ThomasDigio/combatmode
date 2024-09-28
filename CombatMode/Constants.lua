@@ -563,49 +563,50 @@ local DefaultBindings = {
     enabled = true,
     key = "BUTTON1",
     value = "ACTIONBUTTON1",
-    macroName = ""
+    customAction = ""
   },
   button2 = {
     enabled = true,
     key = "BUTTON2",
     value = "ACTIONBUTTON2",
-    macroName = ""
+    customAction = ""
   },
   shiftbutton1 = {
     enabled = true,
     key = "SHIFT-BUTTON1",
     value = "ACTIONBUTTON3",
-    macroName = ""
+    customAction = ""
   },
   shiftbutton2 = {
     enabled = true,
     key = "SHIFT-BUTTON2",
     value = "ACTIONBUTTON4",
-    macroName = ""
+    customAction = ""
   },
   ctrlbutton1 = {
     enabled = true,
     key = "CTRL-BUTTON1",
     value = "ACTIONBUTTON5",
-    macroName = ""
+    customAction = ""
   },
   ctrlbutton2 = {
     enabled = true,
     key = "CTRL-BUTTON2",
     value = "ACTIONBUTTON6",
-    macroName = ""
+    customAction = ""
+
   },
   altbutton1 = {
     enabled = true,
     key = "ALT-BUTTON1",
     value = "ACTIONBUTTON7",
-    macroName = ""
+    customAction = ""
   },
   altbutton2 = {
     enabled = true,
     key = "ALT-BUTTON2",
     value = "ACTIONBUTTON8",
-    macroName = ""
+    customAction = ""
   },
   toggle = {
     key = "Combat Mode Toggle",
