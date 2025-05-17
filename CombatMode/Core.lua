@@ -190,10 +190,10 @@ end
 local function IsDCLoaded()
   local DC = AceAddon:GetAddon("DynamicCam", true)
   CM.DynamicCam = DC ~= nil and true or false
-  if CM.DynamicCam then
-    print(CM.Constants.BasePrintMsg ..
-            "|cff909090: |cffE52B50DynamicCam detected!|r Handing over control of |cffE37527• Camera Features|r.|r")
-  end
+  -- if CM.DynamicCam then
+  --   print(CM.Constants.BasePrintMsg ..
+  --           "|cff909090: |cffE52B50DynamicCam detected!|r Handing over control of |cffE37527• Camera Features|r.|r")
+  -- end
 end
 
 ---------------------------------------------------------------------------------------
@@ -333,7 +333,7 @@ end
 
 local function CenterCursor(shouldCenter)
   if shouldCenter then
-    SetCVar("CursorFreelookCentering", 1)
+    SetCVar("CursorFreelookCentering", 0)
     CM.DebugPrint("Locking cursor to crosshair position.")
   else
     SetCVar("CursorFreelookCentering", 0)

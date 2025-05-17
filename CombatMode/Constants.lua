@@ -20,7 +20,7 @@ CM.Constants.ReticleTargetingCVarValues = {
   ["deselectOnClick"] = 1, -- Disables Sticky Targeting. We never want this w/ soft targeting, as it interferes w/ SoftTargetForce
   ["SoftTargetForce"] = 1, -- Auto-set target to match soft target. 1 = for enemies, 2 = for friends
   ["SoftTargetMatchLocked"] = 1, -- Match appropriate soft target to locked target. 1 = hard locked only, 2 = targets you attack
-  ["SoftTargetWithLocked"] = 2, -- Allows soft target selection while player has a locked target. 2 = always do soft targeting
+  ["SoftTargetWithLocked"] = 1, -- Allows soft target selection while player has a locked target. 2 = always do soft targeting
   -- SoftTarget Enemy
   ["SoftTargetEnemy"] = 3, -- Sets when enemy soft targeting should be enabled. 0=off, 1=gamepad, 2=KBM, 3=always
   ["SoftTargetEnemyArc"] = 0, -- 0 = No yaw arc allowed, must be directly in front (More precise. Harder to target far away enemies but better for prioritizing stacked targets). 1 = Must be in front of arc (Less precise. Makes targeting far away enemies easier but prioritizing gets messy with stacked mobs).
@@ -41,7 +41,7 @@ CM.Constants.ReticleTargetingCVarValues = {
   ["SoftTargetIconGameObject"] = 1,
   -- cursor centering
   ["CursorFreelookCentering"] = 0, -- !BUG: needs to be set to 0 initially because Blizzard broke something in 10.2, otherwise it wll cause the camera to jolt the equivalent vector to the centered cursor position from where your cursor was before locking.
-  ["CursorStickyCentering"] = 1 -- !BUG: we can't use it due to the issue described above. Fore more info, see: https://github.com/Stanzilla/WoWUIBugs/issues/504
+  ["CursorStickyCentering"] = 0 -- !BUG: we can't use it due to the issue described above. Fore more info, see: https://github.com/Stanzilla/WoWUIBugs/issues/504
 }
 
 -- CVARS FOR ACTION CAMERA
