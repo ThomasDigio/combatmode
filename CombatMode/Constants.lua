@@ -132,11 +132,7 @@ CM.Constants.BLIZZARD_EVENTS = {
   REMATCH_EVENTS = {
     "PLAYER_ENTERING_WORLD" -- Loading Cvars on every reload
   },
-  -- Events responsible for crosshair reaction
-  TARGETING_EVENTS = {
-    "PLAYER_SOFT_ENEMY_CHANGED",
-    "PLAYER_SOFT_INTERACT_CHANGED"
-  },
+  -- Events that fire HandleFriendlyTargetingInCombat()
   FRIENDLY_TARGETING_EVENTS = {
     "PLAYER_REGEN_ENABLED", -- Disabling friendly targeting when leaving combat
     "PLAYER_REGEN_DISABLED" -- Enabling friendly targeting when entering combat
@@ -145,7 +141,8 @@ CM.Constants.BLIZZARD_EVENTS = {
   UNCATEGORIZED_EVENTS = {
     "PLAYER_MOUNT_DISPLAY_CHANGED", -- Toggling crosshair when mounting/dismounting
     "PLAYER_REGEN_ENABLED" -- Resetting crosshair when leaving combat
-  }
+  },
+
 }
 
 ---------------------------------------------------------------------------------------
@@ -206,7 +203,8 @@ end
 -- CROSSHAIR REACTION COLORS
 CM.Constants.CrosshairReactionColors = {
   hostile = {1, 0.2, 0.3, 1}, -- red
-  friendly = {0, 1, 0.3, 0.8}, -- green
+  friendly_npc = {0, 1, 0.3, 0.8}, -- green (friendly NPCs)
+  friendly_player = {0.3, 0.6, 1, 0.8}, -- blue (friendly players)
   object = {1, 0.8, 0.2, 0.8}, -- yellow
   base = {1, 1, 1, 0.5}, -- white
   mounted = {1, 1, 1, 0} -- transparent
@@ -385,11 +383,11 @@ CM.Constants.WildcardFramesToCheck = {}
 
 -- Vendor mounts to force UnlockFreeLook
 CM.Constants.MountsToCheck = {
-  "Grand Expedition Yak",
-  "Traveler's Tundra Mammoth",
-  "Mighty Caravan Brutosaur",
-  "Trader's Gilded Brutosaur",
-  "Grizzly Hills Packmaster"
+  61447, -- Traveler's Tundra Mammoth
+  122708, -- Grand Expedition Yak
+  264058, -- "Mighty Caravan Brutosaur"
+  465235, -- "Trader's Gilded Brutosaur"
+  457485, -- "Grizzly Hills Packmaster"
 }
 
 ---------------------------------------------------------------------------------------
@@ -631,6 +629,7 @@ CM.Constants.DatabaseDefaults = {
       "Narci_Vignette"
     },
     actionCamera = false,
+    actionCamMouselookDisable = false,
     mouseLookSpeed = 120,
     pulseCursor = true,
     mountCheck = false,
