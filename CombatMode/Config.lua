@@ -188,11 +188,11 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
         width = 1.65,
         order = 1.3,
         set = function(_, value)
-          CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].customAction = value
+          CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].macroName = value
           CM.SetNewBinding(CM.DB[CM.GetBindingsLocation()].bindings[button1Settings])
         end,
         get = function()
-          return CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].customAction
+          return CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].macroName
         end,
         disabled = function()
           return not CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].enabled or
@@ -256,11 +256,11 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
         width = 1.65,
         order = 2.3,
         set = function(_, value)
-          CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].customAction = value
+          CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].macroName = value
           CM.SetNewBinding(CM.DB[CM.GetBindingsLocation()].bindings[button2Settings])
         end,
         get = function()
-          return CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].customAction
+          return CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].macroName
         end,
         disabled = function()
           return not CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].enabled or

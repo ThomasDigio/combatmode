@@ -20,7 +20,7 @@ CM.Constants.ReticleTargetingCVarValues = {
   ["deselectOnClick"] = 1, -- Disables Sticky Targeting. We never want this w/ soft targeting, as it interferes w/ SoftTargetForce
   ["SoftTargetForce"] = 0, -- Auto-set target to match soft target. 1 = for enemies, 2 = for friends
   ["SoftTargetMatchLocked"] = 1, -- Match appropriate soft target to locked target. 1 = hard locked only, 2 = targets you attack
-  ["SoftTargetWithLocked"] = 1, -- Allows soft target selection while player has a locked target. 2 = always do soft targeting
+  ["SoftTargetWithLocked"] = 2, -- Allows soft target selection while player has a locked target. 2 = always do soft targeting
   -- SoftTarget Enemy
   ["SoftTargetEnemy"] = 3, -- Sets when enemy soft targeting should be enabled. 0=off, 1=gamepad, 2=KBM, 3=always
   ["SoftTargetEnemyArc"] = 0, -- 0 = No yaw arc allowed, must be directly in front (More precise. Harder to target far away enemies but better for prioritizing stacked targets). 1 = Must be in front of arc (Less precise. Makes targeting far away enemies easier but prioritizing gets messy with stacked mobs).
@@ -611,50 +611,50 @@ local DefaultBindings = {
     enabled = true,
     key = "BUTTON1",
     value = "ACTIONBUTTON1",
-    customAction = ""
+    macroName = ""
   },
   button2 = {
     enabled = true,
     key = "BUTTON2",
     value = "ACTIONBUTTON2",
-    customAction = ""
+    macroName = ""
   },
   shiftbutton1 = {
     enabled = true,
     key = "SHIFT-BUTTON1",
     value = "ACTIONBUTTON3",
-    customAction = ""
+    macroName = ""
   },
   shiftbutton2 = {
     enabled = true,
     key = "SHIFT-BUTTON2",
     value = "ACTIONBUTTON4",
-    customAction = ""
+    macroName = ""
   },
   ctrlbutton1 = {
     enabled = true,
     key = "CTRL-BUTTON1",
     value = "ACTIONBUTTON5",
-    customAction = ""
+    macroName = ""
   },
   ctrlbutton2 = {
     enabled = true,
     key = "CTRL-BUTTON2",
     value = "ACTIONBUTTON6",
-    customAction = ""
+    macroName = ""
 
   },
   altbutton1 = {
     enabled = true,
     key = "ALT-BUTTON1",
     value = "FOCUSTARGET",
-    customAction = ""
+    macroName = ""
   },
   altbutton2 = {
     enabled = true,
     key = "ALT-BUTTON2",
     value = "CLEARFOCUS",
-    customAction = ""
+    macroName = ""
   },
   toggle = {
     key = "Combat Mode - Mouse Look",
