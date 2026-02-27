@@ -1166,7 +1166,7 @@ function CM.SetNewBinding(buttonSettings)
   local key, value = buttonSettings.key, buttonSettings.value
   local valueToUse
   if value == "MACRO" then
-    valueToUse = buttonSettings.macroName
+    valueToUse = "MACRO " .. buttonSettings.macroName
   elseif value == "CLEARTARGET" then
     valueToUse = "MACRO CM_ClearTarget"
   elseif value == "CLEARFOCUS" then

@@ -642,7 +642,6 @@ local DefaultBindings = {
     key = "CTRL-BUTTON2",
     value = "ACTIONBUTTON6",
     macroName = ""
-
   },
   altbutton1 = {
     enabled = true,

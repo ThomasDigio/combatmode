@@ -197,6 +197,14 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
         disabled = function()
           return not CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].enabled or
                    CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].value ~= "MACRO"
+        end,
+        validate = function(_, value)
+          if not CM.MacroExists(value) then
+            CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].macroName = ""
+            return CM.METADATA["TITLE"] .. "\n\n|cffcfcfcfNo macro found with that name.|r"
+          else
+            return true
+          end
         end
       },
       buttonbreak = {
@@ -265,6 +273,14 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
         disabled = function()
           return not CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].enabled or
                    CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].value ~= "MACRO"
+        end,
+        validate = function(_, value)
+          if not CM.MacroExists(value) then
+            CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].macroName = ""
+            return CM.METADATA["TITLE"] .. "\n\n|cffcfcfcfNo macro found with that name.|r"
+          else
+            return true
+          end
         end
       },
       spacing3 = Spacing("full", 3),
