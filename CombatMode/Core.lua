@@ -1388,6 +1388,24 @@ local function Rematch()
   CM.LockFreeLook()
 end
 
+-- Temporarily disable friendly targeting during combat
+local function HandleFriendlyTargetingInCombat()
+  local CharConfig = CM.DB.char or {}
+  local isFriendlyTargetingInCombatOn = CharConfig.reticleTargeting and CharConfig.friendlyTargeting
+
+  if not isFriendlyTargetingInCombatOn then
+    return
+  end
+
+  local InCombat = UnitAffectingCombat("player")
+
+  if InCombat then
+    CM.SetFriendlyTargeting(false)
+  else
+    CM.SetFriendlyTargeting(true)
+  end
+end
+
 --[[
 Handle events based on their category.
 You need to first register the event in the CM.Constants.BLIZZARD_EVENTS table before using it here.
@@ -1405,6 +1423,7 @@ local function HandleEventByCategory(category, event)
       Rematch()
     end,
     FRIENDLY_TARGETING_EVENTS = function()
+      HandleFriendlyTargetingInCombat()
       -- Handle combat start/end for healing radial
       if CM.HealingRadial then
         if event == "PLAYER_REGEN_DISABLED" and CM.HealingRadial.OnCombatStart then
