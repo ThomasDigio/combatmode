@@ -18,7 +18,7 @@ CM.Constants.ReticleTargetingCVarValues = {
   -- SoftTarget General
   ["interactKeyWarningTutorial"] = 1, -- Hides the interact key tutorial if using the INTERACTMOUSEOVER binding
   ["deselectOnClick"] = 1, -- Disables Sticky Targeting. We never want this w/ soft targeting, as it interferes w/ SoftTargetForce
-  ["SoftTargetForce"] = 1, -- Auto-set target to match soft target. 1 = for enemies, 2 = for friends
+  ["SoftTargetForce"] = 0, -- Auto-set target to match soft target. 1 = for enemies, 2 = for friends
   ["SoftTargetMatchLocked"] = 1, -- Match appropriate soft target to locked target. 1 = hard locked only, 2 = targets you attack
   ["SoftTargetWithLocked"] = 1, -- Allows soft target selection while player has a locked target. 2 = always do soft targeting
   -- SoftTarget Enemy
@@ -27,7 +27,7 @@ CM.Constants.ReticleTargetingCVarValues = {
   ["SoftTargetEnemyRange"] = 60,
   -- SoftTarget Interact
   ["SoftTargetInteract"] = 3,
-  ["SoftTargetInteractArc"] = 1, -- Setting it to 1 since we don't need too much precision when interacting with NPCs and having to aim precisely at them when this is set to 0 gets annoying.
+  ["SoftTargetInteractArc"] = 0, -- Setting it to 1 since we don't need too much precision when interacting with NPCs and having to aim precisely at them when this is set to 0 gets annoying.
   ["SoftTargetInteractRange"] = 15,
   -- SoftTarget Friend
   ["SoftTargetFriend"] = 0,
@@ -100,15 +100,13 @@ CM.Constants.BlizzardTagetFocusCVarValues = {
 ---------------------------------------------------------------------------------------
 --                                       MACROS                                      --
 ---------------------------------------------------------------------------------------
--- For interrupts/taunts we use CM_PrioritizeTarge
--- For everything else we wannna macro, we use CM_PrioritizeCursor
+
 CM.Constants.Macros = {
   CM_ClearTarget = "/stopmacro [noexists]\n/cleartarget",
   CM_ClearFocus = "/stopmacro [noexists]\n/clearfocus",
-  CM_CastCursor = "#showtooltip\n/cast [mod:shift] SPELL; [@cursor] SPELL",
-  CM_PrioritizeTarget = "#showtooltip\n/cleartarget [help][noharm][dead]\n/cast [@target,harm,nodead][@mouseover,harm,nodead] SPELL\n/startattack",
-  CM_PrioritizeCursor = "#showtooltip\n/cleartarget [help][noharm][dead]\n/cast [@mouseover,harm,nodead][@target,harm,nodead] SPELL\n/startattack",
-  CM_PrioritizeCursorShift = "#showtooltip [mod:shift] SPELL_1; SPELL_2\n/cleartarget [help][noharm][dead]\n/cast [mod:shift,@mouseover,harm,nodead][mod:shift,@target,harm,nodead] SPELL_1; [@mouseover,harm,nodead][@target,harm,nodead] SPELL_2\n/startattack",
+  CM_ToggleFocusAny = "/focus [@focus,exists] none; [@mouseover,exists][]",
+  CM_ToggleFocusEnemy = "/focus [@focus,exists] none; [@mouseover,exists,harm,nodead][]",
+  CM_ToggleFocusTarget = "/focus [@focus,exists] none; [@target,exists][]",
 }
 
 ---------------------------------------------------------------------------------------
@@ -121,7 +119,8 @@ CM.Constants.BLIZZARD_EVENTS = {
     "LOADING_SCREEN_ENABLED", -- This forces a relock when quick-loading (e.g: loading after starting m+ run) thanks to the OnUpdate fn
     "BARBER_SHOP_OPEN",
     "CINEMATIC_START",
-    "PLAY_MOVIE"
+    "PLAY_MOVIE",
+    "HOUSE_EDITOR_MODE_CHANGED",
   },
   -- Events that fire LockFreeLook()
   LOCK_EVENTS = {
@@ -132,7 +131,6 @@ CM.Constants.BLIZZARD_EVENTS = {
   REMATCH_EVENTS = {
     "PLAYER_ENTERING_WORLD" -- Loading Cvars on every reload
   },
-  -- Events that fire HandleFriendlyTargetingInCombat()
   FRIENDLY_TARGETING_EVENTS = {
     "PLAYER_REGEN_ENABLED", -- Disabling friendly targeting when leaving combat
     "PLAYER_REGEN_DISABLED" -- Enabling friendly targeting when entering combat
@@ -142,8 +140,45 @@ CM.Constants.BLIZZARD_EVENTS = {
     "PLAYER_MOUNT_DISPLAY_CHANGED", -- Toggling crosshair when mounting/dismounting
     "PLAYER_REGEN_ENABLED" -- Resetting crosshair when leaving combat
   },
+  -- Events that trigger refresh of click-cast bindings (and Healing Radial slice attrs when applicable)
+  REFRESH_BINDINGS_EVENTS = {
+    "UPDATE_BINDINGS",           -- User changed/saved keybinds; refresh overrides so they match new bindings
+    "HOUSE_EDITOR_MODE_CHANGED", -- Enter/exit housing edit mode; refresh so action bar overrides are skipped in editor
+    "GROUP_ROSTER_UPDATE",       -- Party composition changed
+    "ACTIONBAR_SLOT_CHANGED",    -- Action bar spell/item changed
+    "UPDATE_VEHICLE_ACTIONBAR",  -- Vehicle action bar updated
+    "UPDATE_POSSESS_BAR",
+    "PET_BAR_UPDATE",
+    "UPDATE_BONUS_ACTIONBAR",    -- Bonus bar changed (druid form, rogue stealth, etc.)
+    "UPDATE_OVERRIDE_ACTIONBAR", -- Override bar appeared/changed (vehicle, quest UI)
+    "UPDATE_SHAPESHIFT_FORM",    -- Shapeshift form changed
+    "ACTIONBAR_PAGE_CHANGED",    -- Action bar page switched
+    "PLAYER_GAINS_VEHICLE_DATA", -- Player entered a vehicle
+    "PLAYER_LOSES_VEHICLE_DATA", -- Player exited a vehicle
+    "UNIT_ENTERED_VEHICLE",      -- Player entered a vehicle (alternative)
+    "UNIT_EXITED_VEHICLE",       -- Player exited a vehicle (alternative)
+  },
+  -- Events for focus lock detection
+  FOCUS_LOCK_EVENTS = {
+    "PLAYER_FOCUS_CHANGED",     -- Focus changed (lock-in animation)
+  },
 
 }
+
+---------------------------------------------------------------------------------------
+--                              HEALING RADIAL POSITIONS                             --
+---------------------------------------------------------------------------------------
+-- Slice positions for 5-man content (angles in degrees, 0 = right, 90 = up)
+-- Each slice covers 72 degrees (360/5)
+CM.Constants.HealingRadialSlices = {
+  [1] = { defaultRole = "TANK",    angle = 90,  label = "12 o'clock (top)" },
+  [2] = { defaultRole = "DAMAGER", angle = 162, label = "10 o'clock (upper-left)" },
+  [3] = { defaultRole = "HEALER",  angle = 234, label = "7 o'clock (lower-left)" },
+  [4] = { defaultRole = "DAMAGER", angle = 306, label = "5 o'clock (lower-right)" },
+  [5] = { defaultRole = "DAMAGER", angle = 18,  label = "2 o'clock (upper-right)" },
+}
+
+CM.Constants.HealingRadialSliceArc = 72 -- degrees per slice
 
 ---------------------------------------------------------------------------------------
 --                                        ASSETS                                     --
@@ -207,7 +242,8 @@ CM.Constants.CrosshairReactionColors = {
   friendly_player = {0.3, 0.6, 1, 0.8}, -- blue (friendly players)
   object = {1, 0.8, 0.2, 0.8}, -- yellow
   base = {1, 1, 1, 0.5}, -- white
-  mounted = {1, 1, 1, 0} -- transparent
+  mounted = {1, 1, 1, 0}, -- transparent
+  focus = {1, 0, 1, 1} -- purple
 }
 
 ---------------------------------------------------------------------------------------
@@ -371,6 +407,13 @@ CM.Constants.FramesToCheck = {
   "SubscriptionInterstitialFrame",
   "CinematicFrameCloseDialog",
   "MovieFrame",
+  "HouseEditorFrame",
+  "HousingDashboardFrame",
+  "CatalogShopFrame",
+  "HousingCornerstonePurchaseFrame",
+  -- NOTE: CombatModeHealingRadialFrame removed from watchlist.
+  -- Healing radial visibility is handled by IsHealingRadialActive() in ShouldFreeLookBeOff().
+  -- Using the watchlist would conflict with alpha-based visibility used for combat compatibility.
   "Baganator_CategoryViewBackpackViewFrameblizzard",
   "Baganator_CategoryViewBackpackViewFramegw2_ui",
   "Baganator_CategoryViewBackpackViewFrame"
@@ -544,6 +587,8 @@ CM.Constants.ActionsToProcess = {
 CM.Constants.OverrideActions = {
   CLEARFOCUS = "|cff69ccf0Clear Focus|r",
   CLEARTARGET = "|cff69ccf0Clear Target|r",
+  TOGGLEFOCUSANY = "|cff69ccf0Toggle Focus Any|r",
+  TOGGLEFOCUSENEMY = "|cff69ccf0Toggle Focus Enemy|r",
   MACRO = "|cff69ccf0Run MACRO|r"
 }
 
@@ -602,22 +647,18 @@ local DefaultBindings = {
   altbutton1 = {
     enabled = true,
     key = "ALT-BUTTON1",
-    value = "ACTIONBUTTON7",
+    value = "FOCUSTARGET",
     customAction = ""
   },
   altbutton2 = {
     enabled = true,
     key = "ALT-BUTTON2",
-    value = "ACTIONBUTTON8",
+    value = "CLEARFOCUS",
     customAction = ""
   },
   toggle = {
-    key = "Combat Mode Toggle",
+    key = "Combat Mode - Mouse Look",
     value = "BUTTON3"
-  },
-  hold = {
-    key = "(Hold) Switch Mode",
-    value = "BUTTON4"
   }
 }
 
@@ -646,15 +687,31 @@ CM.Constants.DatabaseDefaults = {
     crosshairY = 100,
     silenceAlerts = false,
     debugMode = false,
-    bindings = DefaultBindings
+    bindings = DefaultBindings,
+    healingRadial = {
+      enabled = false,
+      sliceRadius = 120,
+      sliceSize = 1.0,
+      showHealthBars = false,
+      showBackground = true,
+      roleIconSize = 64,
+      nameFontSize = 13,
+      healthyColor = {0, 0.8, 0, 1},
+      damagedColor = {1, 1, 0, 1},
+      criticalColor = {1, 0, 0, 1},
+      fadeInDuration = 0.08,
+      fadeOutDuration = 0.05,
+    }
   },
   char = {
     useGlobalBindings = false,
     shoulderOffset = 1.0,
     reticleTargeting = true,
-    crosshairPriority = true,
-    friendlyTargeting = false,
-    friendlyTargetingInCombat = false,
+    reticleTargetingEnemyOnly = true,
+    macroInjectionClickCastOnly = false,
+    focusCurrentTargetNotCrosshair = false,
+    castAtCursorSpells = "Heroic Leap, Shift, Sigil of Flame, Infernal Strike, Blizzard",
+    excludeFromTargetingSpells = "Shield Wall, Ice Block, Divine Shield, Blur",
     stickyCrosshair = false,
     bindings = DefaultBindings
   }

@@ -5,15 +5,13 @@
 local _G = _G
 local AceAddon = _G.LibStub("AceAddon-3.0")
 
--- Check if running on Retail or Classic
-local ON_RETAIL_CLIENT = (_G.WOW_PROJECT_ID == _G.WOW_PROJECT_MAINLINE)
-
 -- CACHING GLOBAL VARIABLES
 local GetBindingKey = _G.GetBindingKey
 local GetCurrentBindingSet = _G.GetCurrentBindingSet
 local ReloadUI = _G.ReloadUI
 local SaveBindings = _G.SaveBindings
 local SetBinding = _G.SetBinding
+local strtrim = _G.strtrim
 
 -- RETRIEVING ADDON TABLE
 local CM = AceAddon:GetAddon("CombatMode")
@@ -46,7 +44,7 @@ local function Header(option, order)
     },
     unlock = {
       type = "header",
-      name = "|cff00FF7FAUTO CURSOR UNLOCK|r",
+      name = "|cffffd700AUTO CURSOR UNLOCK|r",
       order = order
     },
     reticle = {
@@ -57,6 +55,11 @@ local function Header(option, order)
     clicks = {
       type = "header",
       name = "|cffB47EDCCLICK CASTING|r",
+      order = order
+    },
+    radial = {
+      type = "header",
+      name = "|cff00FF7FHEALING RADIAL|r",
       order = order
     },
     advanced = {
@@ -94,9 +97,15 @@ local function Description(option, order)
       fontSize = "medium",
       order = order
     },
+    radial = {
+      type = "description",
+      name = "\nA radial menu for quickly casting helpful spells at party members. While |cffE52B50Mouse Look|r is active and you're in a party, hold a mouse button to display the radial, flick toward your target, and release to cast.\n\n",
+      fontSize = "medium",
+      order = order
+    },
     advanced = {
       type = "description",
-      name = "\nCreate your own custom condition that forces a |cff00FF7FCursor Unlock|r by entering a chunk of Lua code that at the end evaluates to |cff00FF7FTrue|r if the cursor should be freed, |cffE52B50False|r otherwise.\n\n|cff909090For example, this would unlock the cursor while standing still but not while mounted: \n\n|cff69ccf0local isStill = GetUnitSpeed('player') == 0 \nlocal onMount = IsMounted()\nreturn not onMount and isStill|r\n\n",
+      name = "\nCreate your own custom condition that forces a |cffffd700Cursor Unlock|r by entering a chunk of Lua code that at the end evaluates to |cff00FF7FTrue|r if the cursor should be freed, |cffE52B50False|r otherwise.\n\n|cff909090For example, this would unlock the cursor while standing still but not while mounted: \n\n|cff69ccf0local isStill = GetUnitSpeed('player') == 0 \nlocal onMount = IsMounted()\nreturn not onMount and isStill|r\n\n",
       fontSize = "medium",
       order = order
     }
@@ -141,6 +150,9 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
           else
             CM.ResetBindingOverride(CM.DB[CM.GetBindingsLocation()].bindings[button1Settings])
           end
+          if CM.HealingRadial and CM.HealingRadial.OnBindingChanged then
+            CM.HealingRadial.OnBindingChanged()
+          end
         end,
         get = function()
           return CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].enabled
@@ -157,6 +169,9 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
         set = function(_, value)
           CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].value = value
           CM.SetNewBinding(CM.DB[CM.GetBindingsLocation()].bindings[button1Settings])
+          if CM.HealingRadial and CM.HealingRadial.OnBindingChanged then
+            CM.HealingRadial.OnBindingChanged()
+          end
         end,
         get = function()
           return CM.DB[CM.GetBindingsLocation()].bindings[button1Settings].value
@@ -203,6 +218,9 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
           else
             CM.ResetBindingOverride(CM.DB[CM.GetBindingsLocation()].bindings[button2Settings])
           end
+          if CM.HealingRadial and CM.HealingRadial.OnBindingChanged then
+            CM.HealingRadial.OnBindingChanged()
+          end
         end,
         get = function()
           return CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].enabled
@@ -219,6 +237,9 @@ local function GetButtonOverrideGroup(modifier, groupOrder)
         set = function(_, value)
           CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].value = value
           CM.SetNewBinding(CM.DB[CM.GetBindingsLocation()].bindings[button2Settings])
+          if CM.HealingRadial and CM.HealingRadial.OnBindingChanged then
+            CM.HealingRadial.OnBindingChanged()
+          end
         end,
         get = function()
           return CM.DB[CM.GetBindingsLocation()].bindings[button2Settings].value
@@ -354,7 +375,7 @@ local AboutOptions = {
     },
     featuresList = {
       type = "description",
-      name = "|cff909090• |cffE52B50Mouse Look Camera|r - Rotate the player character's view with the camera without having to perpetually hold right click. \n• |cff00FFFFReticle Targeting|r - Enable users to target units by simply aiming the reticle at them, as well as allowing proper use of |cffcfcfcf@mouseover|r and |cffcfcfcf@cursor|r macro decorators in combination with the |cff00FFFFCrosshair|r. \n• |cffB47EDEMouse Click Casting|r - When Mouse Look is enabled, frees your mouse clicks so you can cast up to 8 skills with them. \n• |cff00FF7FCursor Unlock|r - Automatically releases the cursor when opening interface panels like bags, map, character panel, etc.\n\n",
+      name = "|cff909090• |cffE52B50Mouse Look Camera|r - Rotate the player character's view with the camera without having to perpetually hold right click. \n• |cff00FFFFReticle Targeting|r - Enable users to target units by simply aiming the reticle at them, as well as allowing proper use of |cffcfcfcf@mouseover|r and |cffcfcfcf@cursor|r macro decorators in combination with the |cff00FFFFCrosshair|r. \n• |cffB47EDEMouse Click Casting|r - When Mouse Look is enabled, frees your mouse clicks so you can cast up to 8 skills with them. \n• |cffffd700Cursor Unlock|r - Automatically releases the cursor when opening interface panels like bags, map, character panel, etc. \n• |cff00FF7FHealing Radial|r - Radial menu for quickly casting helpful spells at party members.\n\n",
       order = 3
     },
     versionNumber = {
@@ -510,56 +531,61 @@ local FreeLookOptions = {
     description = Description("freelook", 2),
     toggle = {
       type = "keybinding",
-      name = "|cffffd700Toggle|r",
-      desc = "Toggles the |cffE52B50Mouse Look|r camera ON or OFF.",
-      width = 1.25,
+      name = "|cffffd700Toggle / Hold - |cffE52B50Mouse Look|r|r",
+      desc = "Tap to toggle the |cffE52B50Mouse Look|r camera |cff00FF7FOn|r or |cffE52B50Off|r.\n\nHold to temporarily deactivate it — releasing re-engages it.",
+      width = 1.15,
       order = 3,
       set = function(_, key)
-        local oldKey = (GetBindingKey("Combat Mode Toggle"))
+        local oldKey = (GetBindingKey("Combat Mode - Mouse Look"))
         if oldKey then
           SetBinding(oldKey)
         end
-        SetBinding(key, "Combat Mode Toggle")
+        SetBinding(key, "Combat Mode - Mouse Look")
         SaveBindings(GetCurrentBindingSet())
       end,
       get = function()
-        return (GetBindingKey("Combat Mode Toggle"))
+        return (GetBindingKey("Combat Mode - Mouse Look"))
       end
     },
-    hold = {
+    spacing0 = Spacing(0.1, 3.1),
+    toggleFocusTarget = {
       type = "keybinding",
-      name = "|cffffd700Press & Hold|r",
-      desc = "Hold to temporarily deactivate the |cffE52B50Mouse Look|r camera.",
-      width = 1.25,
+      name = "|cffffd700Toggle - |cffcc00ffTarget Lock|r|r",
+      desc = "Tap to |cffcc00ffTarget Lock|r (Focus) your current target. Tap again to unlock it.\n\nWhile |cffcc00ffTarget Lock|r is active, |cff00FFFFReticle Targeting|r will be stopped from swapping off your current target.\n\n|cff909090Control of which type of unit can be locked is determined by the |cff00FFFFReticle Targeting|r settings.|r",
+      width = 1.15,
       order = 4,
       set = function(_, key)
-        local oldKey = (GetBindingKey("(Hold) Switch Mode"))
+        local oldKey = (GetBindingKey("Combat Mode - Toggle Focus Target"))
         if oldKey then
           SetBinding(oldKey)
         end
-        SetBinding(key, "(Hold) Switch Mode")
+        SetBinding(key, "Combat Mode - Toggle Focus Target")
         SaveBindings(GetCurrentBindingSet())
+        -- Apply override binding to click secure button
+        CM.ApplyToggleFocusTargetBinding()
       end,
       get = function()
-        return (GetBindingKey("(Hold) Switch Mode"))
+        return (GetBindingKey("Combat Mode - Toggle Focus Target"))
       end
     },
+    spacing1 = Spacing(0.1, 4.1),
     interact = {
       type = "keybinding",
-      name = "|cffffd700Interact With Target|r",
-      desc = "Press to interact with crosshair target when in range. \n\n|cff909090This particular targeting arc is intentionally wider to facilitate interaction with NPCs surrounded by players.|r",
-      width = 1.25,
+      name = "|cffffd700Interact - |cff00FFFFReticle Target|r|r",
+      desc = "Press to interact with the unit or world object under the crosshair when in range.|r",
+      width = 1.15,
       order = 5,
       set = function(_, key)
-        local oldKey = (GetBindingKey("INTERACTTARGET"))
+        local oldKey = (GetBindingKey("INTERACTMOUSEOVER"))
         if oldKey then
           SetBinding(oldKey)
         end
-        SetBinding(key, "INTERACTTARGET")
+        SetBinding(key, "INTERACTMOUSEOVER")
+        SetBinding("ALT-" .. key, "INTERACTTARGET")
         SaveBindings(GetCurrentBindingSet())
       end,
       get = function()
-        return (GetBindingKey("INTERACTTARGET"))
+        return (GetBindingKey("INTERACTMOUSEOVER"))
       end
     },
     spacing = Spacing("full", 5.1),
@@ -579,7 +605,7 @@ local FreeLookOptions = {
     hideTooltip = {
       type = "toggle",
       name = "Hide Tooltip During |cffE52B50Mouse Look|r",
-      desc = "Hides the tooltip generated by the |cff00FFFFCrosshair|r while |cffE52B50Mouse Look|r is active.\n\n|cffffd700Default:|r |cff00FF7FOn|r",
+      desc = "Hides the tooltip generated by the crosshair while |cffE52B50Mouse Look|r is active.\n\n|cffffd700Default:|r |cff00FF7FOn|r",
       width = 1.5,
       order = 6.1,
       set = function(_, value)
@@ -603,7 +629,7 @@ local FreeLookOptions = {
     description2 = Description("unlock", 11),
     cursorUnlock = {
       type = "toggle",
-      name = "Enable |cff00FF7FAuto Cursor Unlock|r",
+      name = "Enable |cffffd700Auto Cursor Unlock|r",
       desc = "Automatically disables |cffE52B50Mouse Look|r and releases the cursor when specific frames are visible (Bag, Map, Quest, etc).\n\n|cffffd700Default:|r |cff00FF7FOn|r",
       width = 2.1,
       order = 12,
@@ -630,7 +656,7 @@ local FreeLookOptions = {
     spacing6 = Spacing("full", 13.1),
     watchlist = {
       name = "Frame Watchlist",
-      desc = "Expand the list of Blizzard panels or |cffE37527AddOn|r frames that trigger a |cff00FF7FCursor Unlock.|r \n\n|cff909090Use command |cff69ccf0/fstack|r in chat to check frame names. Mouse over the frame you want to add and look for the identification that usually follows this naming convention: |cffcfcfcfAddonName + Frame|r.\nEx: LootFrame|r\n\n|cffffd700Separate names with commas.|r \n|cffffd700Names are case sensitive.|r",
+      desc = "Expand the list of Blizzard panels or |cffE37527AddOn|r frames that trigger a |cffffd700Cursor Unlock.|r \n\n|cff909090Use command |cff69ccf0/fstack|r in chat to check frame names. Mouse over the frame you want to add and look for the identification that usually follows this naming convention: |cffcfcfcfAddonName + Frame|r.\nEx: LootFrame|r\n\n|cffffd700Separate names with commas.|r \n|cffffd700Names are case sensitive.|r",
       type = "input",
       multiline = true,
       width = "full",
@@ -660,14 +686,14 @@ local FreeLookOptions = {
 local CrosshairGroup = {
   type = "group",
   name = "Crosshair",
-  order = 7,
+  order = 8,
   inline = true,
   args = {
     crosshair = {
       type = "toggle",
       name = "Show Crosshair",
       desc = "Places a dynamic crosshair marker in the center of the screen to assist with |cff00FFFFReticle Targeting|r.\n\n|cffffd700Default:|r |cff00FF7FOn|r",
-      width = 2.04,
+      width = 1.75,
       order = 1,
       set = function(_, value)
         CM.DB.global.crosshair = value
@@ -681,11 +707,12 @@ local CrosshairGroup = {
         return CM.DB.global.crosshair
       end
     },
+    spacing = Spacing(0.15, 1.1),
     crosshairMounted = {
       type = "toggle",
       name = "Hide Crosshair While Mounted",
       desc = "Hides the crosshair while mounted.\n\n|cffffd700Default:|r |cffE52B50Off|r",
-      width = 1.4,
+      width = 1.75,
       order = 2,
       set = function(_, value)
         CM.DB.global.crosshairMounted = value
@@ -701,7 +728,7 @@ local CrosshairGroup = {
       type = "toggle",
       name = "Sticky Crosshair |cff3B73FF©|r |cffE37527•|r",
       desc = "|cff3B73FF© Character-based option|r\n\nMakes the crosshair stick to enemies slightly, making it harder to untarget them by accident.\n\n|cffE37527•|r |cff909090If detected, control of this feature will be relinquished to |cffE37527DynamicCam|r. \n\n|cffffd700Default:|r |cffE52B50Off|r",
-      width = 2.1,
+      width = 1.75,
       order = 3,
       set = function(_, value)
         CM.DB.char.stickyCrosshair = value
@@ -718,13 +745,14 @@ local CrosshairGroup = {
         return CM.DynamicCam or CM.DB.global.crosshair ~= true
       end
     },
-    spacing2 = Spacing("full", 3.1),
+    spacing1 = Spacing(0.15, 3.1),
+    spacingTemp = Spacing(1.75, 3.2),
     crosshairAppearance = {
       name = "Crosshair Appearance",
       desc = "Select the appearance of the crosshair texture.",
       type = "select",
       width = 1.4,
-      order = 4,
+      order = 5,
       values = CM.Constants.CrosshairAppearanceSelectValues,
       set = function(_, value)
         CM.DB.global.crosshairAppearance = CM.Constants.CrosshairTextureObj[value]
@@ -739,10 +767,10 @@ local CrosshairGroup = {
         return CM.DB.global.crosshair ~= true
       end
     },
-    spacing3 = Spacing(0.1, 4.1),
+    spacing3 = Spacing(0.1, 5.1),
     crosshairPreview = {
       type = "description",
-      order = 5,
+      order = 6,
       name = "",
       width = 0.25,
       image = function()
@@ -751,7 +779,7 @@ local CrosshairGroup = {
       imageWidth = 42,
       imageHeight = 42
     },
-    spacing4 = Spacing(0.15, 5.1),
+    spacing4 = Spacing(0.15, 6.1),
     crosshairSize = {
       type = "range",
       name = "Crosshair Size",
@@ -776,7 +804,7 @@ local CrosshairGroup = {
         return CM.DB.global.crosshairSize
       end
     },
-    spacing5 = Spacing("full", 6.1),
+    spacing5 = Spacing("full", 7.1),
     crosshairAlpha = {
       type = "range",
       name = "Crosshair Opacity",
@@ -802,18 +830,18 @@ local CrosshairGroup = {
         return CM.DB.global.crosshairOpacity
       end
     },
-    spacing6 = Spacing(0.15, 7.1),
+    spacing6 = Spacing(0.15, 8.1),
     crosshairY = {
       type = "range",
       name = "Crosshair Vertical Position",
-      desc = "Adjusts the vertical position of the crosshair. \n\n|cffffd700Default:|r |cff00FF7F50|r",
-      min = 0,
+      desc = "Adjusts the vertical position of the crosshair. \n\n|cffffd700Default:|r |cff00FF7F100|r",
+      min = -200,
       max = 200,
-      softMin = 0,
+      softMin = -200,
       softMax = 200,
       step = 10,
       width = 1.75,
-      order = 6,
+      order = 9,
       disabled = function()
         return CM.DB.global.crosshair ~= true
       end,
@@ -821,6 +849,10 @@ local CrosshairGroup = {
         CM.DB.global.crosshairY = value
         if value then
           CM.CreateCrosshair()
+        end
+        -- Update healing radial position so it stays aligned with crosshair without reload
+        if CM.HealingRadial and CM.HealingRadial.UpdateMainFramePosition then
+          CM.HealingRadial.UpdateMainFramePosition()
         end
       end,
       get = function()
@@ -840,8 +872,8 @@ local ReticleTargetingOptions = {
     reticleTargeting = {
       type = "toggle",
       name = "Enable |cff00FFFFReticle Targeting|r |cff3B73FF©|r",
-      desc = "|cff3B73FF© Character-based option|r\n\nConfigures Blizzard's |cffffd700Action Targeting|r feature to be more precise and responsive. \n\n|cffFF5050Be aware that this will override all CVar values related to SoftTarget.|r \n\n|cff909090Uncheck to reset them to their default values.|r\n\n|cffffd700Default:|r |cff00FF7FOn|r",
-      width = 2.1,
+      desc = "|cff3B73FF© Character-based option|r\n\nConfigures Blizzard's |cffffd700Action Targeting|r feature to be more precise and responsive. \n\nWraps actions with |cffB47EDEtargeting macro conditionals|r that select the unit under the crosshair when using an ability. \n\n|cffFF5050Be aware that this will override all CVar values related to SoftTarget.|r \n\n|cff909090Uncheck to reset them to their default values.|r\n\n|cffffd700Default:|r |cff00FF7FOn|r",
+      width = 1.75,
       order = 3,
       confirmText = CM.METADATA["TITLE"] ..
         "\n\n|cffcfcfcfA |cffE52B50UI Reload|r is required when making changes to |cff00FFFFReticle Targeting|r.|r \n\n|cffffd700Proceed?|r",
@@ -859,83 +891,108 @@ local ReticleTargetingOptions = {
         return CM.DB.char.reticleTargeting
       end
     },
-    friendlyTargeting = {
+    spacing0 = Spacing(0.25, 3.1),
+    reticleTargetingEnemyOnly = {
       type = "toggle",
-      name = "Allow Reticle To Target Friendlies |cff3B73FF©|r",
-      desc = "|cff3B73FF© Character-based option|r\n\nAllows the reticle to target friendly NPCs or Players while |cffE52B50Mouse Look|r is active.\n\n|cff909090Disabled by default to avoid situations like the Fiery Brand bug.|r\n\n|cffffd700Default:|r |cffE52B50Off|r",
-      width = 1.5,
+      name = "Only Allow Reticle To Target Enemies |cff3B73FF©|r",
+      desc = "|cff3B73FF© Character-based option|r\n\nOnly allow |cff00FFFFReticle Targeting|r to select hostile units, ignoring friendly NPCs and Players.\n\n|cffffd700Default:|r |cff00FF7FOn|r",
+      width = 1.75,
       order = 4,
       confirm = true,
       confirmText = CM.METADATA["TITLE"] ..
-        "\n\n|cffcfcfcfAllowing the reticle to target friendlies can, under certain conditions, cause a |cffE52B50Invalid Target|r bug. \n\n|cffffd700Proceed anyway?|r|r",
+        "\n\n|cffcfcfcfA |cffE52B50UI Reload|r is required when making changes to |cff00FFFFReticle Targeting|r.|r \n\n|cffffd700Proceed?|r",
       set = function(_, value)
-        CM.DB.char.friendlyTargeting = value
-        if value then
-          CM.SetFriendlyTargeting(true)
-        else
-          CM.SetFriendlyTargeting(false)
-        end
+        CM.DB.char.reticleTargetingEnemyOnly = value
+        ReloadUI()
       end,
       get = function()
-        return CM.DB.char.friendlyTargeting
+        return CM.DB.char.reticleTargetingEnemyOnly
       end,
       disabled = function()
         return not CM.DB.char.reticleTargeting
       end
     },
-    crosshairPriority = {
+    macroInjectionClickCastOnly = {
       type = "toggle",
-      name = "Always Prioritize Target Under Reticle |cff3B73FF©|r",
-      desc = "|cff3B73FF© Character-based option|r\n\nGives the reticle the highest priority when determining which unit the spell will be cast on, |cffFF5050ignoring even manually selected (hard-locked) targets in favor of the unit you're aiming at.|r \n\n|cff909090Disabling this will prevent the crosshair from swapping off hard-locked targets.|r\n\n|cffffd700Default:|r |cff00FF7FOn|r",
-      width = 2.1,
+      name = "Limit Reticle Targeting To |cffB47EDEClick Casting|r Actions |cff3B73FF©|r",
+      desc = "|cff3B73FF© Character-based option|r\n\nWhen enabled, the reticle unit targeting and ground-targeted macro injection apply only to |cffB47EDEClick Casting|r bindings. All other action bar slots will not have the targeting macro injection applied.\n\n|cffffd700Default:|r |cffE52B50Off|r",
+      width = 1.75,
       order = 5,
+      confirm = true,
+      confirmText = CM.METADATA["TITLE"] ..
+        "\n\n|cffcfcfcfA |cffE52B50UI Reload|r is required when making changes to |cff00FFFFReticle Targeting|r.|r \n\n|cffffd700Proceed?|r",
       set = function(_, value)
-        CM.DB.char.crosshairPriority = value
-        if value then
-          CM.SetCrosshairPriority(true)
-        else
-          CM.SetCrosshairPriority(false)
-        end
+        CM.DB.char.macroInjectionClickCastOnly = value
+        ReloadUI()
       end,
       get = function()
-        return CM.DB.char.crosshairPriority
+        return CM.DB.char.macroInjectionClickCastOnly
       end,
       disabled = function()
-        return CM.DB.char.reticleTargeting ~= true or ON_RETAIL_CLIENT == false
+        return not CM.DB.char.reticleTargeting
       end
     },
-    friendlyTargetingInCombat = {
+    spacing1= Spacing(0.25, 5.1),
+    focusCurrentTargetNotCrosshair = {
       type = "toggle",
-      name = "Disable Friendly Targeting In Combat |cff3B73FF©|r",
-      desc = "|cff3B73FF© Character-based option|r\n\nTemporaroly disables friendly targeting while |cffffd700in combat|r.\n\n|cffffd700Default:|r |cffE52B50Off|r",
-      width = 1.5,
+      name = "|cffcc00ffTarget Lock|r Selected Target |cffE52B50Not|r The Crosshair |cff3B73FF©|r",
+      desc = "|cff3B73FF© Character-based option|r\n\nWhen enabled, |cffcc00ffTarget Lock|r will lock onto your currently selected target rather than the unit under your crosshair.\n\n|cffffd700Default:|r |cffE52B50Off|r",
+      width = 1.75,
+      order = 5.2,
+      confirm = true,
+      confirmText = CM.METADATA["TITLE"] ..
+        "\n\n|cffcfcfcfA |cffE52B50UI Reload|r is required when making changes to |cff00FFFFReticle Targeting|r.|r \n\n|cffffd700Proceed?|r",
+      set = function(_, value)
+        CM.DB.char.focusCurrentTargetNotCrosshair = value
+        ReloadUI()
+      end,
+      get = function()
+        return CM.DB.char.focusCurrentTargetNotCrosshair
+      end,
+      disabled = function()
+        return not CM.DB.char.reticleTargeting
+      end
+    },
+    spacing = Spacing("full", 5.3),
+    excludeFromTargetingSpells = {
+      name = "Spells to |cffE52B50exclude|r from |cff00FFFFReticle Targeting|r:",
+      desc = "Spells that you |cffE52B50DON'T|r want the |cffB47EDEtargeting macro conditionals|r applied to, thus not being able to select the crosshair unit.\n\n|cff909090Ex: Shield Wall, Ice Block, Divine Shield.|r\n\n|cffffd700Separate names with commas.|r\n|cffffd700Names are case insensitive.|r",
+      type = "input",
+      multiline = 6,
+      width = 1.75,
       order = 6,
       set = function(_, value)
-        CM.DB.char.friendlyTargetingInCombat = value
+        CM.DB.char.excludeFromTargetingSpells = value and strtrim(value) or ""
+        if CM.RefreshClickCastMacros then CM.RefreshClickCastMacros() end
       end,
       get = function()
-        return CM.DB.char.friendlyTargetingInCombat
+        return CM.DB.char.excludeFromTargetingSpells or ""
       end,
       disabled = function()
-        return not CM.DB.char.reticleTargeting or not CM.DB.char.friendlyTargeting
+        return not CM.DB.char.reticleTargeting
       end
     },
-    spacing = Spacing("full", 6.1),
-    CrosshairGroup = CrosshairGroup,
+    spacing2 = Spacing(0.25, 6.1),
+    castAtCursorSpells = {
+      name = "|cff00ff00Ground-targeted|r spells to be cast at the |cff00FFFFReticle|r:",
+      desc = "|cff00ff00Ground-targeted|r abilities that you want cast with the |cffB47EDE@cursor|r modifier directly at the position of the crosshair without requiring the |cff00ff00green circle|r to be placed.\n\n|cff909090Ex: Heroic Leap, Shift, Blizzard.|r\n\n|cffffd700Separate names with commas.|r \n|cffffd700Names are case insensitive.|r",
+      type = "input",
+      multiline = 6,
+      width = 1.75,
+      order = 7,
+      set = function(_, value)
+        CM.DB.char.castAtCursorSpells = value and strtrim(value) or ""
+        if CM.RefreshClickCastMacros then CM.RefreshClickCastMacros() end
+      end,
+      get = function()
+        return CM.DB.char.castAtCursorSpells or ""
+      end,
+      disabled = function()
+        return not CM.DB.char.reticleTargeting
+      end
+    },
     spacing3 = Spacing("full", 7.1),
-    devnote = {
-      type = "group",
-      name = "|cffffd700Developer Note|r",
-      order = 8,
-      inline = true,
-      args = {
-        crosshairNote = {
-          type = "description",
-          name = "|cff909090While |cffE52B50Mouse Look|r is active, the |cffcfcfcfCursor|r will be moved to the position of the |cff00FFFFCrosshair|r and hidden, allowing it to reliably respond to |cffB47EDE@mouseover|r and |cffB47EDE@cursor|r macros.|r \n|cffcfcfcfExample macros have been added to your account-wide macros list (Esc > Macros) for users who'd like more control over target acquisition through either Soft-Locking or Hard-Locking Targeting.|r",
-          order = 1
-        }
-      }
-    }
+    CrosshairGroup = CrosshairGroup,
   }
 }
 
@@ -969,6 +1026,211 @@ local ClickCastingOptions = {
     shiftGroup = GetButtonOverrideGroup("shift", 6),
     ctrlGroup = GetButtonOverrideGroup("ctrl", 7),
     altGroup = GetButtonOverrideGroup("alt", 8)
+  }
+}
+
+---------------------------------------------------------------------------------------
+--                               HEALING RADIAL CONFIG                               --
+---------------------------------------------------------------------------------------
+local HealingRadialOptions = {
+  name = CM.METADATA["TITLE"],
+  handler = CM,
+  type = "group",
+  args = {
+    header = Header("radial", 1),
+    description = Description("radial", 2),
+    enabled = {
+      type = "toggle",
+      name = "Enable |cff00FF7FHealing Radial|r",
+      desc = "Enables a radial menu for quickly casting helpful spells at party members. While |cffE52B50Mouse Look|r is active and you're in a party, hold a mouse button to display the radial, flick toward your target, and release to cast.\n\n|cffffd700Default:|r |cffE52B50Off|r",
+      width = 2.3,
+      order = 3,
+      confirm = true,
+      confirmText = CM.METADATA["TITLE"] ..
+        "\n\n|cffcfcfcfA |cffE52B50UI Reload|r is required when making changes to the |cff00FF7FHealing Radial|r.|r \n\n|cffffd700Proceed?|r",
+      set = function(_, value)
+        CM.DB.global.healingRadial.enabled = value
+        -- Reload required: frame is only created in HR.Initialize() when enabled is true
+        ReloadUI()
+      end,
+      get = function()
+        return CM.DB.global.healingRadial.enabled
+      end,
+    },
+    keybind = {
+      type = "keybinding",
+      name = "|cffffd700Toggle / Hold - Radial|r",
+      desc = "Tap to toggle the |cff00FF7FHealing Radial|r menu |cff00FF7FOn|r or |cffE52B50Off|r.\n\nHold to temporarily display it — releasing closes it.",
+      width = 1.25,
+      order = 4,
+      set = function(_, key)
+        local oldKey = (GetBindingKey("Combat Mode - Healing Radial"))
+        if oldKey then
+          SetBinding(oldKey)
+        end
+        SetBinding(key, "Combat Mode - Healing Radial")
+        SaveBindings(GetCurrentBindingSet())
+      end,
+      get = function()
+        return (GetBindingKey("Combat Mode - Healing Radial"))
+      end,
+      disabled = function()
+        return not CM.DB.global.healingRadial.enabled
+      end
+    },
+    visualGroup = {
+      type = "group",
+      name = "Visual Settings",
+      order = 5,
+      inline = true,
+      args = {
+        sliceRadius = {
+          type = "range",
+          name = "Radial Size",
+          desc = "Distance from center to each party member slice.\n\n|cffffd700Default:|r |cff00FF7F120|r",
+          min = 100,
+          max = 200,
+          step = 10,
+          width = 1.75,
+          order = 1,
+          set = function(_, value)
+            CM.DB.global.healingRadial.sliceRadius = value
+            if CM.HealingRadial and CM.HealingRadial.UpdateSlicePositionsAndSizes then
+              CM.HealingRadial.UpdateSlicePositionsAndSizes()
+            end
+          end,
+          get = function()
+            return CM.DB.global.healingRadial.sliceRadius
+          end,
+          disabled = function()
+            return not CM.DB.global.healingRadial.enabled
+          end
+        },
+        spacing = Spacing(0.15, 1.1),
+        sliceSize = {
+          type = "range",
+          name = "Slice Scale",
+          desc = "Scale factor for slice elements (role icon, name, health bar). Hover increases by 10%.\n\n|cffffd700Default:|r |cff00FF7F1.0|r (100%)",
+          min = 0.5,
+          max = 1.5,
+          step = 0.1,
+          width = 1.75,
+          order = 2,
+          set = function(_, value)
+            CM.DB.global.healingRadial.sliceSize = value
+            if CM.HealingRadial and CM.HealingRadial.UpdateSlicePositionsAndSizes then
+              CM.HealingRadial.UpdateSlicePositionsAndSizes()
+            end
+          end,
+          get = function()
+            return CM.DB.global.healingRadial.sliceSize
+          end,
+          disabled = function()
+            return not CM.DB.global.healingRadial.enabled
+          end
+        },
+        spacing2 = Spacing("full", 2.1),
+        nameFontSize = {
+          type = "range",
+          name = "Name Font Size",
+          desc = "Size of party member names on each slice.\n\n|cffffd700Default:|r |cff00FF7F13|r",
+          min = 8,
+          max = 24,
+          step = 1,
+          width = 1.75,
+          order = 3,
+          set = function(_, value)
+            CM.DB.global.healingRadial.nameFontSize = value
+          end,
+          get = function()
+            return CM.DB.global.healingRadial.nameFontSize or 13
+          end,
+          disabled = function()
+            return not CM.DB.global.healingRadial.enabled
+          end
+        },
+        spacing3 = Spacing(0.15, 3.1),
+        roleIconSize = {
+          type = "range",
+          name = "Role Icon Size",
+          desc = "Size of the role icons (tank, healer, DPS) on each slice.\n\n|cffffd700Default:|r |cff00FF7F64|r",
+          min = 16,
+          max = 96,
+          step = 16,
+          width = 1.75,
+          order = 4,
+          set = function(_, value)
+            CM.DB.global.healingRadial.roleIconSize = value
+          end,
+          get = function()
+            return CM.DB.global.healingRadial.roleIconSize or 64
+          end,
+          disabled = function()
+            return not CM.DB.global.healingRadial.enabled
+          end
+        },
+        spacing4 = Spacing("full", 4.1),
+        showHealthBars = {
+          type = "toggle",
+          name = "Show Health Bars",
+          desc = "Display health bars on each party member slice.\n\n|cffffd700Default:|r |cffE52B50Off|r",
+          width = 1.9,
+          order = 5,
+          set = function(_, value)
+            CM.DB.global.healingRadial.showHealthBars = value
+          end,
+          get = function()
+            return CM.DB.global.healingRadial.showHealthBars
+          end,
+          disabled = function()
+            return not CM.DB.global.healingRadial.enabled
+          end
+        },
+        showBackground = {
+          type = "toggle",
+          name = "Show Radial Background",
+          desc = "Display a background behind the |cff00FF7FHealing Radial|r.\n\n|cffffd700Default:|r |cff00FF7FOn|r",
+          width = 1.2,
+          order = 6,
+          set = function(_, value)
+            CM.DB.global.healingRadial.showBackground = value
+          end,
+          get = function()
+            return CM.DB.global.healingRadial.showBackground
+          end,
+          disabled = function()
+            return not CM.DB.global.healingRadial.enabled
+          end
+        },
+      }
+    },
+    spacing3 = Spacing("full", 5.1),
+    layoutInfo = {
+      type = "group",
+      name = "|cffffd700Layout Information|r",
+      order = 6,
+      inline = true,
+      args = {
+        layoutNote = {
+          type = "description",
+          name = "|cff909090Party members are automatically positioned by role:|r\n\n|cffcfcfcf• |cff00d1ffTank|r at 12 o'clock (top)\n• |cff00ff00Healer|r at 7 o'clock (bottom-left)\n• |cffff6060DPS|r fill remaining positions\n\nYour character is included in the radial at your role's position.|r",
+          order = 1
+        }
+      }
+    },
+    devnote = {
+      type = "group",
+      name = "|cffffd700Developer Note|r",
+      order = 7,
+      inline = true,
+      args = {
+        note = {
+          type = "description",
+          name = "|cff909090The |cff00FF7FHealing Radial|r uses the same spell assignments as |cffB47EDCClick Casting|r. Configure which spells are bound to each mouse button in the Click Casting tab.|r\n\n|cffFF5050Note:|r Party assignments can only be updated outside of combat due to WoW API restrictions.",
+          order = 1
+        }
+      }
+    }
   }
 }
 
@@ -1052,6 +1314,11 @@ CM.Config.OptionCategories = {
     id = "CombatMode_ClickCasting",
     name = "|cffB47EDC • Click Casting|r",
     table = ClickCastingOptions
+  },
+  {
+    id = "CombatMode_HealingRadial",
+    name = "|cff00FF7F • Healing Radial|r",
+    table = HealingRadialOptions
   },
   {
     id = "CombatMode_Advanced",
