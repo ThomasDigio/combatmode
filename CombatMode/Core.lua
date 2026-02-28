@@ -1392,17 +1392,14 @@ end
 local function HandleFriendlyTargetingInCombat()
   local CharConfig = CM.DB.char or {}
   local isFriendlyTargetingInCombatOn = CharConfig.reticleTargeting and CharConfig.friendlyTargeting
-
   if not isFriendlyTargetingInCombatOn then
     return
   end
 
-  local InCombat = UnitAffectingCombat("player")
-
-  if InCombat then
-    CM.SetFriendlyTargeting(false)
+  if UnitAffectingCombat("player") then
+    SetCVar("SoftTargetFriend", 0)
   else
-    CM.SetFriendlyTargeting(true)
+    SetCVar("SoftTargetFriend", 3)
   end
 end
 
